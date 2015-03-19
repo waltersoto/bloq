@@ -1,0 +1,53 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>bloq.js sample</title>
+    <script src="../bloq.js"></script>
+    <script type="text/javascript">
+
+        window.onload = function () {
+
+            bloq.preload("./templates/", [
+                "template.html",
+                "template-alt.html"
+            ], function () {
+
+                bloq.bind("template.html",[
+                    { "firstName": "User", "lastName": "Test", "title": "Writer" },
+                    { "firstName": "User 2", "lastName": "Test", "title": "Actor" }
+                ],function(html) {
+                    for (var i = 0, max = html.length; i < max; i++) {
+                        document.getElementById("o").appendChild(html[i]);
+                    }
+                });
+
+
+                bloq.bind("template-alt.html", [
+                    { "firstName": "User 3", "lastName": "Test", "title": "Writer" }
+                ], function (html) {
+                    for (var i = 0, max = html.length; i < max; i++) {
+                        document.getElementById("m").appendChild(html[i]);
+                    }
+                });
+
+
+                bloq.load("template.html", function(html) {
+                    document.getElementById("l").appendChild(html);
+                });
+
+
+            });
+
+        };
+
+    </script>
+</head>
+<body>
+<div id="o"></div>
+<br/>
+<div id="m"></div>
+<br/>
+<br/>
+<div id="l"></div>
+</body>
+</html>

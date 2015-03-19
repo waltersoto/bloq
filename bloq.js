@@ -23,8 +23,7 @@ SOFTWARE.
 */
 (function (global) {
 
-    var folder;
-
+    
     var toDom = function (txt) {
         var temp = document.createElement("div");
         temp.innerHTML = txt;
@@ -161,7 +160,7 @@ SOFTWARE.
         },
         load: function (name, callback) {
             ///	<summary>
-            ///	Bind dataset to a template
+            ///	Load a template
             ///	</summary>
             ///	<param name="name" type="string">
             ///	 Name of the template file
