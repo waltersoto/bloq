@@ -1,0 +1,51 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>bloq.js sample</title>
+    <script src="../bloq.js"></script>
+    <script src="templates/inline-templates.js"></script>
+    <script type="text/javascript">
+
+        window.onload = function () {
+
+            bloq.inline(greetins, function() {
+
+                bloq.bind("hello", [{ user: "User N" }], function (html) {
+                    for (var i = 0; i < html.length; i++) {
+                        document.getElementById("o").appendChild(html[i]);
+                    } 
+                });
+
+
+                bloq.bindList([
+                    { template: "hello", data: [{ user: "User 1" }] },
+                    { template: "hi", data: [{ user: "User 2" }] },
+                    { template: "hello", data: [{ user: "User 3" }] },
+                    { template: "hi", data: [{ user: "User 4" }] },
+                    { template: "welcome", data: [{ user: "User 5" }] }
+                ], function (html) {
+                    for (var i = 0; i < html.length; i++) {
+                        document.getElementById("l").appendChild(html[i]);
+                        if (i + 1 < html.length) {
+                            document.getElementById("l").appendChild(document.createTextNode(", "));
+                        }
+                        
+                    }
+                });
+
+
+            });
+
+        };
+
+    </script>
+</head>
+<body>
+    <div id="o"></div>
+    <br />
+    <div id="m"></div>
+    <br />
+    <br />
+    <div id="l"></div>
+</body>
+</html>

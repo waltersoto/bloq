@@ -87,7 +87,12 @@ SOFTWARE.
         return false;
     }
 
+    var validInline = function(o) {
+        return o.hasOwnProperty("name") && o.hasOwnProperty("text");
+    }
+
     var templates = [];
+    var preloaded = false;
 
     var load = function (name, callback, asText) {
         ///	<summary>
@@ -106,7 +111,7 @@ SOFTWARE.
             asText = false;
         }
 
-        if (this.preloaded) {
+        if (preloaded) {
             var sel = where(templates, function (o) {
                 return o.name === name;
             });
@@ -126,10 +131,41 @@ SOFTWARE.
 
 
     var bloq = { 
-        preloaded:false,
-        repository:"",
-        preload: function (repository, list, callback) {
+        repository: "",
+        inline: function (list, callback) {
+            ///	<summary>
+            ///	Preload inline templates (not from external files)
+            ///	</summary>
+            ///	<param name="list" type="array">
+            ///	 Array of inline templates (ex.[{ name:'template1',text:'hello {name}'},{name:'template2',text:'hi {name}'}] )
+            ///	</param> 
+            ///	<param name="callback" type="function">
+            ///	 Function to be executed after all templates are loaded
+            ///	</param>
 
+            for (var i = 0, max = list.length; i < max; i++) {
+                if (validInline(list[i])) {
+                    templates.push(list[i]);
+                }  
+            }
+            preloaded = templates.length > 0;
+            if (typeof callback === "function") {
+                callback();
+            }
+        },
+        preload: function (repository, list, callback) {
+            ///	<summary>
+            ///	Preload external templates
+            ///	</summary>
+            ///	<param name="repository" type="string">
+            ///	 Path to the template folder
+            ///	</param> 
+            ///	<param name="list" type="array">
+            ///	 Array of template filenames
+            ///	</param> 
+            ///	<param name="callback" type="function">
+            ///	 Function to be executed after all templates are loaded
+            ///	</param>
             if (repository.length > 0 && repository.substring(repository.length - 1) === "\\") {
                 repository = repository.substring(0, repository.length - 1);
             }
@@ -147,7 +183,7 @@ SOFTWARE.
                     });
                     processed++;
                     if (processed === max) {
-                        this.preloaded = true;
+                        preloaded = templates.length > 0;
                         if (typeof callback === "function") {
                             callback();
                         }
@@ -155,7 +191,10 @@ SOFTWARE.
                 },true);
             }
         },
-        templates:function() {
+        templates: function () {
+            ///	<summary>
+            ///	Returns array with preloaded templates
+            ///	</summary>
             return templates;
         },
         load: function (name, callback) {
@@ -165,7 +204,7 @@ SOFTWARE.
             ///	<param name="name" type="string">
             ///	 Name of the template file
             ///	</param>  
-            ///	<param name="callbacks" type="function">
+            ///	<param name="callback" type="function">
             ///	 Function that will receive a binded template array. (ex. function(html[]){})
             ///	</param>
 
@@ -222,7 +261,7 @@ SOFTWARE.
             ///	 Data to bind. (ex. [{template:'templateFile.html',data:[{'label1':'data'},{'label2','data'}]}]
             ///  binding item must implement a text field called "template" and array field called "data".
             ///	</param> 
-            ///	<param name="callbacks" type="function">
+            ///	<param name="callback" type="function">
             ///	 Function that will receive a binded template array. (ex. function(html[]){})
             ///	</param>  
 
