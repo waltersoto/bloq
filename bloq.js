@@ -24,9 +24,17 @@ SOFTWARE.
 (function (global) {
 
     
-    var toDom = function (txt) {
+    function escapeRegExp(string) {
+        return  string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+    }
+
+    var replaceAll = function (find, replace, text) { 
+        return text.replace(new RegExp(escapeRegExp(find), "g"), replace);
+    }
+     
+    var toDom = function (txt) { 
         var temp = document.createElement("div");
-        temp.innerHTML = txt;
+        temp.innerHTML = txt; 
         return temp.firstChild;
     };
 
@@ -234,12 +242,12 @@ SOFTWARE.
 
                     for (var i = 0, max = bindings.length; i < max; i++) {
                         var temp = html;
+                       
                         for (var p in bindings[i]) {
-                            if (bindings[i].hasOwnProperty(p)) {
-                                temp = temp.replace("{" + p + "}", bindings[i][p]);
+                            if (bindings[i].hasOwnProperty(p)) { 
+                                temp = replaceAll("{" + p + "}", bindings[i][p], temp);
                             }
-                        }
-
+                        } 
                         items.push(toDom(temp));
                     }
 
