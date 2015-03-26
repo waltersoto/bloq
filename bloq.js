@@ -24,17 +24,29 @@ SOFTWARE.
 (function (global) {
 
     
-    function escapeRegExp(string) {
+    var escapeRegExp = function (string) {
         return  string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+    }
+
+    var trim = function (str) {
+        return str.replace(/^\s+|\s+$/g, "");
     }
 
     var replaceAll = function (find, replace, text) { 
         return text.replace(new RegExp(escapeRegExp(find), "g"), replace);
     }
      
+    var toLower = function (txt) {
+        if (typeof txt !== "undefined" && txt !== null) {
+            return txt.toLowerCase();
+        }
+
+        return "";
+    };
+
     var toDom = function (txt) { 
         var temp = document.createElement("div");
-        temp.innerHTML = txt; 
+        temp.innerHTML = trim(txt);
         return temp.firstChild;
     };
 
@@ -136,6 +148,26 @@ SOFTWARE.
             fetch(name, this.repository + name, callback,asText);
         }
     };
+    function parseXml(text) {
+        var xmlDoc;
+        if (window.DOMParser) {
+            var xmlParser = new DOMParser();
+            xmlDoc = xmlParser.parseFromString(text, "text/xml");
+        } else {
+            xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
+            xmlDoc.async = "false";
+            xmlDoc.loadXML(text);
+        }
+        return xmlDoc;
+    }
+
+    var hasXmlExt = function (filename) {
+        if (typeof filename === "undefined" || filename === null) {
+            return false;
+        }
+        return filename.toLowerCase().split(".").pop() === "xml";
+    };
+
 
 
     var bloq = { 
@@ -181,23 +213,79 @@ SOFTWARE.
             if (repository.length > 0 && repository.substring(repository.length - 1) !== "/") {
                 repository = repository + "/";
             }
+
             this.repository = repository;
-            var processed = 0;
-            for (var i = 0, max = list.length; i < max; i++) {
-                fetch(list[i],this.repository + list[i], function (html,n) {
-                    templates.push({
-                        name: n,
-                        text: html
-                    });
-                    processed++;
-                    if (processed === max) {
-                        preloaded = templates.length > 0;
-                        if (typeof callback === "function") {
-                            callback();
+
+            if (list.constructor !== Array && hasXmlExt(list)) {
+                fetch("xml", this.repository + list, function (text, n) {
+                    if (typeof text !== "undefined"
+                        && text !== null
+                        && text.length > 0) {
+                        
+                        var xml = parseXml(text);
+
+                        if (xml.hasChildNodes()
+                            && toLower(xml.firstChild.localName) === "templates") {
+                            var tpls = xml.firstChild; 
+                            if (tpls.hasChildNodes()) {
+                                for (var tpl = 0, tplM = tpls.childNodes.length;
+                                    tpl < tplM; tpl++) {
+                                    if (toLower(tpls.childNodes[tpl].localName) === "template") {
+                                        var child = tpls.childNodes[tpl];
+                                        var name = "generic-" + tpl;
+                                        var templateContent = "";
+                                        if (child.hasAttributes()) {
+                                            name = child.attributes.getNamedItem("name").value;
+                                        }
+                                        if (child.hasChildNodes()) {
+                                            for (var cld = 0, cldm = child.childNodes.length; cld < cldm; cld++) {
+                                                if (toLower(child.childNodes[cld].nodeName) === "#cdata-section") {
+                                                    templateContent = child.childNodes[cld].nodeValue; 
+                                                }
+                                            }
+                                        }
+
+                                        if (templateContent.length > 0) {
+                                            templates.push({
+                                                name: name,
+                                                text: trim(templateContent)
+                                            });
+                                        } 
+                                    }  
+                                }
+
+                                preloaded = templates.length > 0;
+                                if (typeof callback === "function") {
+                                    callback();
+                                }
+
+                            }
                         }
+                        
                     }
-                },true);
+   
+
+                },false);
+            } else {
+                
+                var processed = 0;
+                for (var i = 0, max = list.length; i < max; i++) {
+                    fetch(list[i], this.repository + list[i], function (html, n) {
+                        templates.push({
+                            name: n,
+                            text: trim(html)
+                        });
+                        processed++;
+                        if (processed === max) {
+                            preloaded = templates.length > 0;
+                            if (typeof callback === "function") {
+                                callback();
+                            }
+                        }
+                    }, true);
+                }
             }
+ 
         },
         templates: function () {
             ///	<summary>

@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<templates>
+  <template name="template">
+    <![CDATA[
+    <div style="border: 1px solid #ddd; padding: 10px; width: 500px; margin-bottom: 10px">
+      <div style="padding: 5px">{firstName} {lastName}</div>
+      <div style="padding: 5px"><i>{title}</i></div>
+    </div>
+    ]]>
+  </template>
+  <template name="template-alt">
+    <![CDATA[
+    <div style="border: 1px solid #ddd; background-color: #dcdcdc; padding: 10px; width: 500px; margin-bottom: 10px">
+      <div style="padding: 5px">{firstName} {lastName}</div>
+      <div style="padding: 5px"><i>{title}</i></div>
+    </div>
+    ]]>
+  </template>
+</templates> 
