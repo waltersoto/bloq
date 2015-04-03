@@ -4,51 +4,46 @@
     <title>bloq.js sample</title>
     <script src="../bloq.js"></script>
     <script type="text/javascript">
+        /* Preload from the "templates" folder and bind some data */
 
-        window.onload = function() {
+        bloq.ready(function() {
 
-            bloq.preload("./templates/", [
-                "template.html",
-                "template-alt.html"
-            ], function() {
+            var $ = function (id){ return  document.getElementById(id);}
 
-                bloq.bindList([
-                    {
-                        template: "template.html",
-                        data: [{ "firstName": "User", "lastName": "Test", "title": "Writer" }]
-                    },
-                    {
-                        template: "template-alt.html",
-                        data: [{ "firstName": "User 2", "lastName": "Test", "title": "Actor" }]
-                    },
-                    {
-                        template: "template.html",
-                        data: [
-                            { "firstName": "User 3", "lastName": "Test", "title": "Character" },
-                            { "firstName": "User 3b", "lastName": "Test", "title": "Character" }
-                        ]
-                    },
-                    {
-                        template: "template-alt.html",
-                        data: [{ "firstName": "User 4", "lastName": "Test", "title": "Singer" }]
-                    },
-                    {
-                        template: "template.html",
-                        data: [{ "firstName": "User 5", "lastName": "Test", "title": "Sportsman" }]
-                    }
-                ], function(html) {
-                    for (var i = 0, max = html.length; i < max; i++) {
-                        document.getElementById("o").appendChild(html[i]);
-                    }
-                });
+            //Load from templates with templates "hello.html", "hi.html", "welcome.html"
+            // and then execute a callback.
+            bloq.loadFrom("./templates/")
+                .with(["hello.html",  "welcome.html"])
+                .then(function () {
+
+                    bloq.bind([{ user: "User 1" },
+                               { user: "User 2" }])
+                              .to("hello.html")
+                              .then(function (html) {
+                                  for (var i = 0; i < html.length; i++) {
+                                      $("hello").appendChild(html[i]);
+                                  }
+                              });
+
+                    bloq.bind([{ user: "User 3" },
+                               { user: "User 4" }])
+                              .to("welcome.html")
+                              .then(function (html) {
+                                  for (var i = 0; i < html.length; i++) {
+                                      $("welcome").appendChild(html[i]);
+                                  }
+                              });
 
             });
 
-        };
+        });      
 
     </script>
 </head>
 <body>
-<div id="o"></div>
+
+<div id="hello"></div>
+<div id="welcome"></div>
+
 </body>
 </html>

@@ -23,19 +23,42 @@ SOFTWARE.
 */
 (function (global) {
 
-    
+    var FUNCTION = "function";
+
+    var EVT_BIND_TO = "bind-to";
+    var EVT_BIND_ALTERNATE = "bind-alternate";
+    var EVT_LOAD_WITH = "load-with";
+    var EVT_LOAD = "load";
+    var EVT_LIST = "load-list";
+    var XML_ROOT = "templates";
+    var XML_CHILD = "template";
+
     var escapeRegExp = function (string) {
-        return  string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+        return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
     }
 
     var trim = function (str) {
         return str.replace(/^\s+|\s+$/g, "");
     }
+    var autoBlank = function (txt) {
+        return (typeof txt === "undefined" || txt === null) ? "" : txt;
+    }
+    var replaceAll = function (find, replace, text) {
 
-    var replaceAll = function (find, replace, text) { 
         return text.replace(new RegExp(escapeRegExp(find), "g"), replace);
     }
-     
+
+    var validListItem = function (o) {
+        if (o.hasOwnProperty("template") && o.hasOwnProperty("data")) {
+            return (o.data.constructor === Array);
+        }
+        return false;
+    }
+
+    var validTemplate = function (o) {
+        return o.hasOwnProperty("name") && o.hasOwnProperty("text");
+    }
+
     var toLower = function (txt) {
         if (typeof txt !== "undefined" && txt !== null) {
             return txt.toLowerCase();
@@ -44,110 +67,12 @@ SOFTWARE.
         return "";
     };
 
-    var toDom = function (txt) { 
+    var toDom = function (txt) {
         var temp = document.createElement("div");
         temp.innerHTML = trim(txt);
         return temp.firstChild;
     };
 
-    var where = function (arr, fn) {
-        var sub = [];
-        (function (a) {
-            for (var i = 0, max = a.length; i < max; i++) {
-                if (fn(arr[i], i)) {
-                    sub.push(arr[i]);
-                }
-            }
-        })(arr);
-        return sub;
-    };
-
-    var ajax = function(p) {
-        (function (xH) {
-           
-            xH.onreadystatechange = function () {
-
-                if (xH.readyState === 4) {
-                    if (xH.responseText.length > 0) { 
-                        if (xH.status === 200) {
-                            if (typeof p.callback === "function") {
-                                p.callback(xH.responseText);
-                            }
-                        }
-                    } 
-                    xH = null; 
-                }
-            };
-
-            xH.open("GET", p.url, true);
-            xH.send(null);
-
-        })(new XMLHttpRequest());
-    };
-
-    var fetch = function (id,templateUrl, callback, asText) {
-        ajax({
-            url: templateUrl,
-            callback: function (html) {
-                if (typeof callback === "function") {
-                    if (typeof asText === "undefined") {
-                        callback(toDom(html));
-                    }
-                    callback(html,id);
-                }
-
-            }
-        });
-    };
-
-    var validTemplatedList = function (o) { 
-        if (o.hasOwnProperty("template") && o.hasOwnProperty("data")) {
-            return (o.data.constructor === Array);
-        }
-        return false;
-    }
-
-    var validInline = function(o) {
-        return o.hasOwnProperty("name") && o.hasOwnProperty("text");
-    }
-
-    var templates = [];
-    var preloaded = false;
-
-    var load = function (name, callback, asText) {
-        ///	<summary>
-        ///	Load template as text with data biding
-        ///	</summary>
-        ///	<param name="name" type="string">
-        ///	 Name of the template file
-        ///	</param>  
-        ///	<param name="callbacks" type="function">
-        ///	 Function that will receive a template instance. (ex. function(html){})
-        ///	</param>
-
-        var done = false;
-
-        if (typeof asText === "undefined") {
-            asText = false;
-        }
-
-        if (preloaded) {
-            var sel = where(templates, function (o) {
-                return o.name === name;
-            });
-
-            if (sel.length > 0) {
-                done = true;
-                if (typeof callback === "function") {
-                    callback(asText ? sel[0].text : toDom(sel[0].text)); 
-                }
-            }
-        }
-
-        if (!done) {
-            fetch(name, this.repository + name, callback,asText);
-        }
-    };
     function parseXml(text) {
         var xmlDoc;
         if (window.DOMParser) {
@@ -161,76 +86,241 @@ SOFTWARE.
         return xmlDoc;
     }
 
-    var hasXmlExt = function (filename) {
-        if (typeof filename === "undefined" || filename === null) {
-            return false;
+    var onload = function (callback) {
+        var current = window.onload;
+        if (typeof window.onload !== FUNCTION) {
+            window.onload = callback;
+        } else {
+            if (typeof callback === FUNCTION) {
+                window.onload = function () {
+                    if (current) {
+                        current();
+                    }
+                    callback();
+                };
+            }
         }
-        return filename.toLowerCase().split(".").pop() === "xml";
+    };
+
+    var readyExecuted = false;
+    var onReady = null;
+    var ready = function (callback) {
+        ///	<summary>
+        /// Execute callback function when DOM is ready
+        ///	</summary>
+        ///	<param name="callback" type="function">
+        /// Function to execute.
+        ///	</param>
+        if (typeof onReady !== FUNCTION) {
+            onReady = callback;
+        } else {
+            var current = onReady;
+            onReady = function () {
+                if (current) {
+                    current();
+                }
+                callback();
+            };
+        }
+
+        if (document.addEventListener) {
+            document.addEventListener("DOMContentLoaded", function () {
+                if (!readyExecuted) {
+                    onReady();
+                    readyExecuted = true;
+                }
+            }, false);
+        } else {
+            onload(callback);
+        }
     };
 
 
-
-    var bloq = { 
-        repository: "",
-        inline: function (list, callback) {
-            ///	<summary>
-            ///	Preload inline templates (not from external files)
-            ///	</summary>
-            ///	<param name="list" type="array">
-            ///	 Array of inline templates (ex.[{ name:'template1',text:'hello {name}'},{name:'template2',text:'hi {name}'}] )
-            ///	</param> 
-            ///	<param name="callback" type="function">
-            ///	 Function to be executed after all templates are loaded
-            ///	</param>
-
-            for (var i = 0, max = list.length; i < max; i++) {
-                if (validInline(list[i])) {
-                    templates.push(list[i]);
-                }  
+    var where = function (arr, fn) {
+        var sub = [];
+        (function (a) {
+            for (var i = 0, max = a.length; i < max; i++) {
+                if (fn(arr[i], i)) {
+                    sub.push(arr[i]);
+                }
             }
-            preloaded = templates.length > 0;
-            if (typeof callback === "function") {
-                callback();
+        })(arr);
+        return sub;
+    };
+
+    var getTemplates = function (lst) {
+        var result = [];
+        if (lst !== null
+            && typeof lst !== "undefined"
+            && lst.constructor === Array) {
+            for (var i = 0, max = lst.length; i < max; i++) {
+                if (lst[i].hasOwnProperty("template")) {
+                    if (typeof lst[i].template !== "undefined"
+                        && lst[i].template !== null) {
+                        result.push(lst[i].template);
+                    }
+                }
             }
-        },
-        preload: function (repository, list, callback) {
-            ///	<summary>
-            ///	Preload external templates
-            ///	</summary>
-            ///	<param name="repository" type="string">
-            ///	 Path to the template folder
-            ///	</param> 
-            ///	<param name="list" type="array">
-            ///	 Array of template filenames
-            ///	</param> 
-            ///	<param name="callback" type="function">
-            ///	 Function to be executed after all templates are loaded
-            ///	</param>
-            if (repository.length > 0 && repository.substring(repository.length - 1) === "\\") {
-                repository = repository.substring(0, repository.length - 1);
+        }
+        return result;
+    };
+
+    var hasExtension = function (filename, ext) {
+        if (typeof filename === "undefined" || filename === null) {
+            return false;
+        }
+        return filename.toLowerCase().split(".").pop() === ext;
+    };
+
+    var usingInline = false;
+    var templateList = [];
+
+    var hasTemplate = function (template) {
+
+        var sel = where(templateList, function (o) {
+
+            return o.name === (validTemplate(template)
+                              ? template.name : template);
+        });
+
+        return sel.length > 0;
+    };
+
+    var addTemplate = function (template) {
+        if (!hasTemplate(template)) {
+            templateList.push(template);
+        }
+    };
+
+    var req = function (p) {
+        (function (xH) {
+
+            xH.onreadystatechange = function () {
+
+                if (xH.readyState === 4) {
+                    if (xH.responseText.length > 0) {
+                        if (xH.status === 200) {
+                            if (typeof p.callback === FUNCTION) {
+                                p.callback(xH.responseText);
+                            }
+                        } else {
+                            if (typeof p.error === FUNCTION) {
+                                p.error(xH.status, xH.statusText);
+                            }
+
+                        }
+                    }
+                    xH = null;
+                }
+            };
+
+            xH.open("GET", p.url, true);
+            xH.send(null);
+
+        })(new XMLHttpRequest());
+    };
+
+    var fetch = function (id, templateUrl, callback, asText) {
+        if (id === null || !hasTemplate(id)) {
+            req({
+                url: templateUrl,
+                callback: function (html) {
+                    if (typeof callback === FUNCTION) {
+                        if (typeof asText === "undefined") {
+                            callback(toDom(html));
+                        }
+                        callback(html, id);
+                    }
+                }
+            });
+        }
+    };
+
+    var repository = "";
+    var hasPreloaded = false;
+    var thenQueue = {};
+    var thenEvents = function (location, html) {
+        this.then = function (callback) {
+            if (hasPreloaded) {
+                if (typeof callback === FUNCTION) {
+                    if (typeof html !== "undefined") {
+                        callback(html);
+                    } else {
+                        callback();
+                    }
+                }
+            } else {
+                if (typeof callback === FUNCTION) {
+                    thenQueue[location] = callback;
+                }
+            }
+        };
+    };
+
+    var assignRepo = function (repo) {
+
+        if (repo.constructor === Array) {
+            usingInline = true;
+        } else {
+            usingInline = false;
+            if (repo.length > 0 && repo.substring(repo.length - 1) === "\\") {
+                repo = repo.substring(0, repo.length - 1);
             }
 
-            if (repository.length > 0 && repository.substring(repository.length - 1) !== "/") {
-                repository = repository + "/";
+            if (repo.length > 0 && repo.substring(repo.length - 1) !== "/") {
+                repo = repo + "/";
             }
 
-            this.repository = repository;
+        }
 
-            if (list.constructor !== Array && hasXmlExt(list)) {
-                fetch("xml", this.repository + list, function (text, n) {
+        repository = repo;
+    };
+
+    var loadEvents = function () {
+
+
+        this.with = function (lst) {
+
+            if (usingInline) {
+
+                for (var inl = 0, inlMax = lst.length; inl < inlMax; inl++) {
+
+                    if (repository.constructor === Array) {
+                        for (var ri = 0, rm = repository.length; ri < rm; ri++) {
+                            if (validTemplate(repository[ri])) {
+                                if (repository[ri].name === lst[inl]) {
+                                    templateList.push(repository[ri]);
+                                    break;
+                                }
+
+                            }
+                        }
+                    }
+
+
+                }
+
+                hasPreloaded = templateList.length > 0;
+                if (typeof thenQueue[EVT_LOAD_WITH] === FUNCTION) {
+                    thenQueue[EVT_LOAD_WITH]();
+                }
+
+            } else if (lst.constructor !== Array && hasExtension(lst, "xml")) {
+                fetch(null, repository + lst, function (text) {
+
                     if (typeof text !== "undefined"
                         && text !== null
                         && text.length > 0) {
-                        
+
                         var xml = parseXml(text);
 
                         if (xml.hasChildNodes()
-                            && toLower(xml.firstChild.localName) === "templates") {
-                            var tpls = xml.firstChild; 
+                            && toLower(xml.firstChild.localName) === XML_ROOT) {
+                            var tpls = xml.firstChild;
                             if (tpls.hasChildNodes()) {
                                 for (var tpl = 0, tplM = tpls.childNodes.length;
                                     tpl < tplM; tpl++) {
-                                    if (toLower(tpls.childNodes[tpl].localName) === "template") {
+                                    if (toLower(tpls.childNodes[tpl].localName) === XML_CHILD) {
                                         var child = tpls.childNodes[tpl];
                                         var name = "generic-" + tpl;
                                         var templateContent = "";
@@ -240,162 +330,319 @@ SOFTWARE.
                                         if (child.hasChildNodes()) {
                                             for (var cld = 0, cldm = child.childNodes.length; cld < cldm; cld++) {
                                                 if (toLower(child.childNodes[cld].nodeName) === "#cdata-section") {
-                                                    templateContent = child.childNodes[cld].nodeValue; 
+                                                    templateContent = child.childNodes[cld].nodeValue;
                                                 }
                                             }
                                         }
 
                                         if (templateContent.length > 0) {
-                                            templates.push({
+                                            addTemplate({
                                                 name: name,
                                                 text: trim(templateContent)
                                             });
-                                        } 
-                                    }  
+                                        }
+                                    }
                                 }
 
-                                preloaded = templates.length > 0;
-                                if (typeof callback === "function") {
-                                    callback();
+                                hasPreloaded = templateList.length > 0;
+                                if (typeof thenQueue[EVT_LOAD_WITH] === FUNCTION) {
+                                    thenQueue[EVT_LOAD_WITH]();
                                 }
 
                             }
                         }
-                        
-                    }
-   
 
-                },false);
+                    }
+
+
+                }, false);
             } else {
-                
+
                 var processed = 0;
-                for (var i = 0, max = list.length; i < max; i++) {
-                    fetch(list[i], this.repository + list[i], function (html, n) {
-                        templates.push({
-                            name: n,
+                for (var i = 0, max = lst.length; i < max; i++) {
+                    fetch(lst[i], repository + lst[i], function (html, name) {
+                        addTemplate({
+                            name: name,
                             text: trim(html)
                         });
                         processed++;
                         if (processed === max) {
-                            preloaded = templates.length > 0;
-                            if (typeof callback === "function") {
-                                callback();
+                            hasPreloaded = templateList.length > 0;
+                            if (typeof thenQueue[EVT_LOAD_WITH] === FUNCTION) {
+                                thenQueue[EVT_LOAD_WITH]();
                             }
                         }
                     }, true);
                 }
+
             }
- 
-        },
-        templates: function () {
-            ///	<summary>
-            ///	Returns array with preloaded templates
-            ///	</summary>
-            return templates;
-        },
-        load: function (name, callback) {
-            ///	<summary>
-            ///	Load a template
-            ///	</summary>
-            ///	<param name="name" type="string">
-            ///	 Name of the template file
-            ///	</param>  
-            ///	<param name="callback" type="function">
-            ///	 Function that will receive a binded template array. (ex. function(html[]){})
-            ///	</param>
 
-            load(name, callback);
-
-
-        },
-        bind: function (name, bindings, callback) {
-            ///	<summary>
-            ///	Load template as text with data biding
-            ///	</summary>
-            ///	<param name="name" type="string">
-            ///	 Name of the template file
-            ///	</param> 
-            ///	<param name="bindings" type="json">
-            ///	 Data to bind. (ex. [{'label1':'data'},{'label2','data'}]
-            ///	</param> 
-            ///	<param name="callbacks" type="function">
-            ///	 Function that will receive and array of template instances. (ex. function(html[]){})
-            ///	</param>  
-
-            load(name, function(html) {
-                
-                if (typeof bindings !== "undefined") {
-
-                    var items = [];
-
-                    for (var i = 0, max = bindings.length; i < max; i++) {
-                        var temp = html;
-                       
-                        for (var p in bindings[i]) {
-                            if (bindings[i].hasOwnProperty(p)) { 
-                                temp = replaceAll("{" + p + "}", bindings[i][p], temp);
-                            }
-                        } 
-                        items.push(toDom(temp));
-                    }
-
-                    if (typeof callback === "function") {
-                        callback(items);
-                    }
-
-                }
-
-            }, true);
-
-
-        },
-        bindList: function (bindList, callback) {
-            ///	<summary>
-            ///	Bind to a list with multiple templates
-            ///	</summary>  
-            ///	<param name="bindList" type="json">
-            ///	 Data to bind. (ex. [{template:'templateFile.html',data:[{'label1':'data'},{'label2','data'}]}]
-            ///  binding item must implement a text field called "template" and array field called "data".
-            ///	</param> 
-            ///	<param name="callback" type="function">
-            ///	 Function that will receive a binded template array. (ex. function(html[]){})
-            ///	</param>  
-
-            if (typeof bindList !== "undefined"
-             && bindList !== null) {
-
-                        var items = [];
-
-                        for (var i = 0, max = bindList.length; i < max; i++) {
-
-                            var t = bindList[i];
-                            if (validTemplatedList(t)) {
-
-                                this.bind(t.template, t.data,
-                                    function (html) {
-                                         for (var a = 0, amx = html.length; a < amx; a++) {
-                                            items.push(html[a]);   
-                                         } 
-                                    });
-
-                            }
-
-                        }
-
-                        if (typeof callback === "function") {
-                            callback(items);
-                        }
-                    }
+            return new thenEvents(EVT_LOAD_WITH);
 
         }
     };
 
+    var load = function (name, asText) {
+        ///	<summary>
+        ///	Load template as text with data biding
+        ///	</summary>
+        ///	<param name="name" type="string">
+        ///	 Name of the template file
+        ///	</param>  
+        ///	<param name="callbacks" type="function">
+        ///	 Function that will receive a template instance. (ex. function(html){})
+        ///	</param>
 
-    
+        var then = new thenEvents(EVT_LOAD);
+        var done = false;
+
+        if (typeof asText === "undefined") {
+            asText = false;
+        }
+
+        if (hasPreloaded) {
+            var sel = where(templateList, function (o) {
+                return o.name === name;
+            });
+
+            if (sel.length > 0) {
+                done = true;
+                then = new thenEvents(EVT_LOAD, asText ? sel[0].text : toDom(sel[0].text));
+            }
+        }
+
+        if (!done) {
+            fetch(name, repository + name, function (html) {
+                if (typeof thenQueue[EVT_LOAD] === FUNCTION) {
+                    thenQueue[EVT_LOAD](asText ? html : toDom(html));
+                }
+            }, asText);
+        }
+
+        return then;
+    };
+
+    var loadFrom = function (repo) {
+        assignRepo(repo);
+
+        return new loadEvents();
+    };
+
+    var bindEvents = function (bindings) {
+
+        this.alternate = function (templates, templateSource) {
+
+            var items = [];
+
+            if (templates.constructor === Array) {
+
+                var reqTemplates = templates;
+                if (typeof templateSource !== "undefined") {
+                    reqTemplates = templateSource;
+                }
+
+                loadFrom(repository)
+                    .with(reqTemplates)
+                    .then(function () {
+
+                        var templateN = templates.length;
+                        var current = 0;
+                        if (bindings !== null
+                            && typeof bindings !== "undefined"
+                            && templateN > 0) {
+
+                            for (var i = 0, max = bindings.length; i < max; i++) {
+
+                                (function (oi) {
+                                    if (current >= templateN) {
+                                        current = 0;
+                                    }
+                                    load(templates[current], true).then(function (html) {
+
+                                        current++;
+
+                                        var temp = html;
+
+                                        for (var p in bindings[oi]) {
+
+                                            if (bindings[oi].hasOwnProperty(p)) {
+                                                temp = replaceAll("{" + p + "}", autoBlank(bindings[oi][p]), autoBlank(temp));
+                                            }
+
+                                        }
+
+                                        items.push(toDom(temp));
+
+                                        if (typeof thenQueue[EVT_BIND_ALTERNATE] === FUNCTION) {
+                                            thenQueue[EVT_BIND_ALTERNATE](items);
+                                        }
+                                    });
+
+                                })(i);
+
+                            }
+                        }
+
+                    });
+
+
+            }
+
+            return new thenEvents(EVT_BIND_ALTERNATE, items);
+        };
+
+        this.to = function (template) {
+
+            var items = [];
+
+            if (template.constructor === Array) {
+
+                for (var t = 0, tmax = template.length; t < tmax; t++) {
+                    load(template[t], true).then(function (html) {
+
+                        if (bindings !== null
+                                    && typeof bindings !== "undefined") {
+
+                            for (var i = 0, max = bindings.length; i < max; i++) {
+                                var temp = html;
+
+                                for (var p in bindings[i]) {
+                                    if (bindings[i].hasOwnProperty(p)) {
+                                        temp = replaceAll("{" + p + "}", autoBlank(bindings[i][p]), autoBlank(temp));
+                                    }
+                                }
+                                items.push(toDom(temp));
+                            }
+
+                            if (typeof thenQueue[EVT_BIND_TO] === FUNCTION) {
+                                thenQueue[EVT_BIND_TO](items);
+                            }
+
+                        }
+
+                    });
+                }
+
+            } else {
+
+                load(template, true).then(function (html) {
+
+                    if (bindings !== null
+                                && typeof bindings !== "undefined") {
+
+                        for (var i = 0, max = bindings.length; i < max; i++) {
+                            var temp = html;
+
+                            for (var p in bindings[i]) {
+                                if (bindings[i].hasOwnProperty(p)) {
+                                    temp = replaceAll("{" + p + "}", autoBlank(bindings[i][p]), autoBlank(temp));
+                                }
+                            }
+                            items.push(toDom(temp));
+                        }
+
+                        if (typeof thenQueue[EVT_BIND_TO] === FUNCTION) {
+                            thenQueue[EVT_BIND_TO](items);
+                        }
+
+                    }
+
+                });
+
+            }
+
+            return new thenEvents(EVT_BIND_TO, items);
+        };
+    };
+
+    var bind = function (bindings) {
+
+        return new bindEvents(bindings);
+
+    };
+
+    var list = function (bindList, templateSource) {
+
+        var items = [];
+
+        if (typeof bindList !== "undefined"
+           && bindList !== null) {
+
+            var reqTemplates = getTemplates(bindList);
+            if (typeof templateSource !== "undefined") {
+                reqTemplates = templateSource;
+            }
+
+            loadFrom(repository)
+                .with(reqTemplates)
+                .then(function () {
+
+                    for (var i = 0, max = bindList.length; i < max; i++) {
+
+                        (function (t) {
+                            if (validListItem(t)) {
+                                bind(t.data)
+                                    .to(t.template)
+                                    .then(function (html) {
+                                        for (var a = 0, amx = html.length; a < amx; a++) {
+                                            items.push(html[a]);
+                                        }
+                                    });
+                            }
+                        })(bindList[i]);
+
+
+                    }
+                    if (typeof thenQueue[EVT_LIST] === FUNCTION) {
+                        thenQueue[EVT_LIST](items);
+                    }
+
+                });
+
+        }
+
+        return new thenEvents(EVT_LIST, items);
+    };
+
+    var bloq = {
+        ready: ready,
+        templates: function () {
+            return templateList;
+        },
+        fromRepo: function (repo) {
+            assignRepo(repo);
+            return this;
+        },
+        list: list,
+        loadFrom: loadFrom,
+        read: function (template, parameters) {
+            if (typeof parameters === "undefined" || parameters === null) {
+                parameters = {};
+            }
+            var asText = false;
+            if (repository === null || typeof repository === "undefined" || repository.length === 0) {
+
+                if (parameters.hasOwnProperty("repo")) {
+                    assignRepo(parameters.repo);
+                } else if (parameters.hasOwnProperty("repository")) {
+                    assignRepo(parameters.repository);
+                } else {
+                    //Assume root
+                    repository = "./";
+                }
+            }
+
+            if (parameters.hasOwnProperty("asText")) {
+                asText = parameters.asText;
+            }
+
+            return load(template, asText);
+        },
+        bind: bind
+    };
 
     if (!global.bloq) {
         global.bloq = bloq;
     }
-
 
 })(window);
