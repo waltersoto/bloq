@@ -1,0 +1,51 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>bloq.js sample</title>
+    <script src="../bloq.js"></script>
+    <script src="templates/greetings.js"></script>
+    <script type="text/javascript">
+        /* Preload from the "templates" folder and bind some data */
+
+        bloq.ready(function() {
+
+            var $ = function(id) { return document.getElementById(id); }
+
+            //Load all templates from a javascript array from greetings.js
+            // and then execute a callback.
+            bloq.loadFrom(greetings)
+                .with("*")
+                .then(function() {
+
+                    //Bind data to template "hello"
+                    bloq.bind([{ user: "Bound to hello" }])
+                              .to("hello")
+                              .then(function (html) {
+                                  for (var i = 0; i < html.length; i++) {
+                                      $("hello").appendChild(html[i]);
+                                  }
+                              });
+
+                    //Bind data alternating between templates "hello", "hi", and "welcome"
+                    bloq.bind([{ user: "User 1" },
+                               { user: "User 2" }, { user: "User 3" }, { user: "User 4" },
+                               { user: "User 5" }, { user: "User 6" }, { user: "User 7" }])
+                              .alternate(["hello", "hi", "welcome"])
+                              .then(function (html) {
+                                  for (var i = 0; i < html.length; i++) {
+                                      $("alt").appendChild(html[i]);
+                                  }
+                              });
+                });
+        });
+    </script>
+</head>
+<body>
+
+    <div id="hello"></div>
+    <br />
+    <div id="alt"></div>
+
+</body>
+</html>
+

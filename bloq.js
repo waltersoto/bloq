@@ -283,22 +283,39 @@ SOFTWARE.
 
             if (usingInline) {
 
-                for (var inl = 0, inlMax = lst.length; inl < inlMax; inl++) {
+                if (repository.constructor === Array) {
 
-                    if (repository.constructor === Array) {
-                        for (var ri = 0, rm = repository.length; ri < rm; ri++) {
-                            if (validTemplate(repository[ri])) {
-                                if (repository[ri].name === lst[inl]) {
-                                    templateList.push(repository[ri]);
+                if (lst.constructor !== Array) {
+                    for (var ri = 0, rm = repository.length; ri < rm; ri++) {
+                        if (validTemplate(repository[ri])) {
+                            if (repository[ri].name === lst || lst === "*") {
+                                templateList.push(repository[ri]);
+                                if (lst !== "*") {
                                     break;
                                 }
-
                             }
+                            
                         }
                     }
+                } else {
+                    
+                    for (var inl = 0, inlMax = lst.length; inl < inlMax; inl++) {
+                            for (ri = 0, rm = repository.length; ri < rm; ri++) {
+                                if (validTemplate(repository[ri])) {
+                                    if (repository[ri].name === lst[inl]) {
+                                        templateList.push(repository[ri]);
+                                        break;
+                                    }
 
+                                }
+                            }
+                        }
+                }
 
                 }
+                //---<
+
+
 
                 hasPreloaded = templateList.length > 0;
                 if (typeof thenQueue[EVT_LOAD_WITH] === FUNCTION) {
