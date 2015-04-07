@@ -280,6 +280,18 @@ SOFTWARE.
 
 
         this.with = function (lst) {
+            /// <signature>
+            ///   <summary>Template list</summary>
+            ///   <param name="lst" type="array">Array of template names (ex. ["template1","teamplate2"])</param> 
+            /// </signature>
+            /// <signature>
+            ///   <summary>Template xml</summary>
+            ///   <param name="lst" type="string">XML filename</param> 
+            /// </signature>
+            /// <signature>
+            ///   <summary>Javascript Array</summary>
+            ///   <param name="lst" type="array">Name of the javascript array that holds the templates (ex. [{ name:"templatename", text:"template content"}]).</param> 
+            /// </signature>
 
             if (usingInline) {
 
@@ -313,8 +325,6 @@ SOFTWARE.
                 }
 
                 }
-                //---<
-
 
 
                 hasPreloaded = templateList.length > 0;
@@ -440,6 +450,13 @@ SOFTWARE.
     };
 
     var loadFrom = function (repo) {
+        ///	<summary>
+        ///	Set repositiory location and allow the with() method to preload the templates.
+        ///	</summary>
+        ///	<param name="repo" type="string">
+        ///	 Repository location
+        ///	</param>
+
         assignRepo(repo);
 
         return new loadEvents();
@@ -448,6 +465,15 @@ SOFTWARE.
     var bindEvents = function (bindings) {
 
         this.alternate = function (templates, templateSource) {
+            /// <signature>
+            ///   <summary>Bind data alternating between templates</summary>
+            ///   <param name="templates" type="array">Array of template names (ex. ["template1","teamplate2"])</param> 
+            /// </signature>
+            /// <signature>
+            ///   <summary>Bind data alternating between templates</summary>
+            ///   <param name="template" type="array">Array of template names (ex. ["template1","teamplate2"])</param>
+            ///   <param name="templateSource" type="string">Array of template names (ex. templates.xml )</param>
+            /// </signature>
 
             var items = [];
 
@@ -627,6 +653,12 @@ SOFTWARE.
             return templateList;
         },
         fromRepo: function (repo) {
+            ///	<summary>
+            ///	Set repositiory location without preloading the templates.
+            ///	</summary>
+            ///	<param name="repo" type="string">
+            ///	 Repository location
+            ///	</param>
             assignRepo(repo);
             return this;
         },
