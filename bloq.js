@@ -24,7 +24,7 @@ SOFTWARE.
 (function (global) {
 
     var FUNCTION = "function";
-
+    var UNDEFINED = "undefined";
     var EVT_BIND_TO = "bind-to";
     var EVT_BIND_ALTERNATE = "bind-alternate";
     var EVT_LOAD_WITH = "load-with";
@@ -43,8 +43,7 @@ SOFTWARE.
     var autoBlank = function (txt) {
         return (typeof txt === "undefined" || txt === null) ? "" : txt;
     }
-    var replaceAll = function (find, replace, text) {
-
+    var replaceAll = function (find, replace, text) { 
         return text.replace(new RegExp(escapeRegExp(find), "g"), replace);
     }
 
@@ -219,7 +218,7 @@ SOFTWARE.
 
         })(new XMLHttpRequest());
     };
-
+     
     var fetch = function (id, templateUrl, callback, asText) {
         if (id === null || !hasTemplate(id)) {
             req({
@@ -689,9 +688,292 @@ SOFTWARE.
         },
         bind: bind
     };
+     
 
-    if (!global.bloq) {
-        global.bloq = bloq;
+    //#region "Binder" 
+       
+    var ATT = {
+        BLOCK: "bloq-area",
+        PROPERTY: "bloq-field",
+        TEMPLATE: "bloq-template",
+        REPEATER: "bloq-repeat"
+    };
+
+    var TAG = {
+        INPUT: "input",
+        RADIO: "radio",
+        TEXT_AREA: "textarea",
+        SELECT: "select"
+    }
+
+    var setName = "";
+
+    var select = function (parent, query) {
+        if (parent !== null && typeof parent !== UNDEFINED) {
+            return parent.querySelectorAll(query);
+        }
+        return null;
+    };
+
+    var processDefined = function (json, elem, arr) {
+        for (var i = 0, max = arr.length; i < max; i++) {
+            var c = trim(arr[i]);
+            if (json.hasOwnProperty(c)) {
+                if (typeof (json[c]) !== UNDEFINED) {
+                    var currentTxt = elem.innerHTML;
+                    elem.innerHTML = replaceAll("{" + c + "}",
+                        typeof json[c] === FUNCTION ? json[c]() : json[c]
+                        , currentTxt);
+                }
+            }
+        }
+    };
+
+    var getNode = function (nodeName) {
+        var nodes = document.querySelectorAll("[" + ATT.BLOCK + "=" + nodeName + "]");
+        if (typeof nodes !== UNDEFINED && nodes !== null && nodes.length > 0) {
+            return nodes[0];
+        }
+        return null;
+    };
+
+    var getNodeProperties = function () {
+
+        var container = getNode(setName);
+
+        var nodeList = select(container, "[" + ATT.PROPERTY + "]");
+
+        return nodeList;
+    };
+
+    var repeateIt = function (parent, child, obj) {
+        for (var p in obj) {
+
+            if (obj.hasOwnProperty(p)) {
+
+                if (typeof (obj[p]) !== UNDEFINED) {
+
+                    var currentTxt = child.innerHTML;
+                    child.innerHTML = replaceAll("{" + p + "}",
+                        (typeof obj[p] === FUNCTION) ? obj[p]() : obj[p]
+                        , currentTxt);
+                    parent.appendChild(child);
+
+                }
+            }
+
+        }
+    };
+
+    var repeatFn = function (set) {
+
+        this.to = function (name) {
+            var parent = getNode(setName);
+            if (parent !== null && typeof parent !== UNDEFINED) {
+                var template = select(parent, "[" + ATT.REPEATER + " = " + name + "]");
+                if (template !== null && typeof template !== UNDEFINED) {
+                    for (var i = 0, m = template.length; i < m; i++) {
+                        var original = template[i].cloneNode(true);
+                        parent.removeChild(template[i]);
+                        if (set.constructor === Array) {
+                            for (var s = 0, sm = set.length; s < sm; s++) {
+                                repeateIt(parent, original.cloneNode(true), set[s]);
+                            }
+
+                        }
+
+                    }
+                }
+            }
+        }
+    };
+
+    var repeat = function (set) {
+        return new repeatFn(set);
+    };
+
+    var fn = function (name) {
+
+        setName = name;
+
+        this.repeat = repeat;
+
+        this.take = function () {
+
+            var set = {
+            };
+
+            var nodes = getNodeProperties(setName);
+            if (typeof nodes !== "undefined" && nodes !== null && nodes.length > 0) {
+                for (var i = 0; i < nodes.length; i++) {
+                    var propName = nodes[i].attributes.getNamedItem(ATT.PROPERTY).value;
+
+                    switch (nodes[i].tagName.toLowerCase()) {
+                        case TAG.TEXT_AREA:
+                        case TAG.INPUT:
+                            var type = nodes[i].type;
+                            switch (type.toLowerCase()) {
+                                case TAG.RADIO:
+                                    if (nodes[i].checked) {
+                                        set[propName] = nodes[i].value;
+                                    }
+                                    break;
+                                default:
+                                    set[propName] = nodes[i].value;
+                                    break;
+                            }
+                            break;
+                        case TAG.SELECT:
+                            if (typeof nodes[i].selectedIndex !== "undefined"
+                                && nodes[i].selectedIndex !== -1) {
+                                if (nodes[i].multiple) {
+                                    var v = [];
+                                    for (var oi = 0, m = nodes[i].length; oi < m; oi++) {
+                                        if (nodes[i].options[oi].selected) {
+                                            v.push(nodes[i].options[oi].value);
+                                        }
+                                    }
+                                    set[propName] = v;
+                                } else {
+                                    set[propName] = nodes[i].options[nodes[i].selectedIndex].value;
+                                }
+                            }
+                            break;
+                        default:
+                            if (typeof (nodes[i].innerHTML) !== "undefined") {
+                                set[propName] = nodes[i].innerHTML;
+                            }
+
+                            break;
+                    }
+                }
+            }
+
+            return set;
+        };
+
+        this.put = function (json) {
+
+            var container = getNode(setName);
+
+            if (container !== null) {
+
+                //Process templates
+                var templates = container.querySelectorAll("[" + ATT.TEMPLATE + "]");
+                var processAll = [];
+                if (templates.length > 0) {
+                    for (var t = 0, tmax = templates.length; t < tmax; t++) {
+                        var elem = templates[t].getAttribute(ATT.TEMPLATE);
+                        if (trim(elem) === "*") {
+                            processAll.push(templates[t]);
+                        } else {
+                            var fieldsArr = elem.split(",");
+                            processDefined(json, templates[t], fieldsArr);
+                        }
+                    }
+                }
+
+                for (var p in json) {
+                    if (json.hasOwnProperty(p)) {
+                        if (typeof (json[p]) !== UNDEFINED) {
+
+                            for (var all = 0, allMax = processAll.length; all < allMax; all++) {
+                                var currentTxt = processAll[all].innerHTML;
+                                processAll[all].innerHTML = replaceAll("{" + p + "}",
+                                    (typeof json[p] === FUNCTION) ? json[p]() : json[p]
+                                    , currentTxt);
+                            }
+
+                            var element = container.querySelectorAll("[" + ATT.PROPERTY + "=" + p + "]");
+
+                            if (typeof element !== UNDEFINED && element.length > 0) {
+
+                                for (var i = 0, max = element.length; i < max; i++) {
+
+                                    var current = (typeof json[p] === FUNCTION) ? json[p]() : json[p];
+                                    switch (element[i].tagName.toLowerCase()) {
+                                        case TAG.TEXT_AREA:
+                                        case TAG.INPUT:
+                                            if (element[i].type.toLowerCase() === TAG.RADIO) {
+                                                for (var ri = 0, rm = element.length; ri < rm; ri++) {
+                                                    if (element[ri].value.toLowerCase() === current.toLowerCase()) {
+                                                        element[ri].checked = true;
+                                                    }
+                                                }
+                                            } else {
+                                                element[i].value = current;
+                                            }
+
+                                            break;
+                                        case TAG.SELECT:
+
+                                            if (json[p].constructor !== Array) {
+                                                for (var oi = 0, m = element[0].length; oi < m; oi++) {
+                                                    if (element[i].options[oi].value.toLowerCase() === current.toLowerCase()) {
+                                                        element[i].options[oi].selected = true;
+                                                    }
+                                                }
+                                            } else {
+                                                for (var ji = 0, jm = json[p].length; ji < jm; ji++) {
+                                                    for (oi = 0, m = element[i].length; oi < m; oi++) {
+                                                        if (element[i].options[oi].value.toLowerCase() === current.toLowerCase()) {
+                                                            element[i].options[oi].selected = true;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            break;
+                                        default:
+                                            if (typeof (element[i].innerHTML) !== UNDEFINED) {
+                                                element[i].innerHTML = current;
+                                            }
+
+                                            break;
+                                    }
+
+                                }
+
+                            }
+
+
+                        }
+                    }
+                }//json
+
+            }
+
+            return this;
+        };
+
+    };
+
+    var bloqFn = function (name) {
+        return new fn(name);
+    };
+
+    bloqFn.extend = function (extension) {
+        ///	<summary>
+        ///	Extend the object literal.
+        ///	</summary>
+        ///	<param name="extension" type="object">
+        ///	 Object to be attached
+        ///	</param>
+        for (var p in extension) {
+            if (extension.hasOwnProperty(p)) {
+                if (typeof (extension[p]) !== UNDEFINED) {
+                    bloqFn[p] = extension[p];
+                }
+            }
+        }
+    };
+
+    bloqFn.extend(bloq);
+
+    //#endregion
+
+
+    if (!global.bloq) { 
+        global.bloq = global["bloq"] = bloqFn;
     }
 
 })(window);

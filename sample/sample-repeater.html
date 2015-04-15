@@ -1,0 +1,66 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>bloq.js sample</title>
+    <script src="../bloq.js"></script>
+    <script type="text/javascript">
+        /* Preload from the "templates" folder and bind some data */
+
+        var showObject = function() {
+            alert(JSON.stringify(bloq("form").take()));
+        };
+
+        bloq.ready(function () {
+
+            var $ = function (id) { return document.getElementById(id); }
+
+            bloq("form").put({
+                firstName: "Joe",
+                lastName:"Flacco"
+            });
+
+            bloq("main")
+                .repeat([
+                    {
+                        firstName: "Walter", lastName: "Soto",
+                        fullName: function () { return this.firstName + " " + this.lastName },
+                        type:"Guest"
+                    },
+                    {
+                        firstName: "Willie", lastName: "Nelson", 
+                        fullName: function () { return this.firstName + " " + this.lastName },
+                        type: "Guest"
+                    },
+                    {
+                        firstName: "Will", lastName: "Smith", 
+                        fullName: function () { return this.firstName + " " + this.lastName },
+                        type: "Guest"
+                    }
+                ])
+                .to("users");
+
+        });
+
+    </script>
+</head>
+<body>
+
+<div bloq-area="main">
+    <div bloq-area="form">
+        <input type="text" name="firstName" bloq-field="firstName" />
+        <br />
+        <input type="text" name="lastName" bloq-field="lastName"/>
+        <br/>
+        <input type="button" onclick="showObject()" value="click" />
+    </div>
+    <br/>
+    <div bloq-repeat="users"> 
+      <div>
+          {fullName} ({type})
+      </div> 
+    </div>
+</div>
+
+</body>
+</html>
+
