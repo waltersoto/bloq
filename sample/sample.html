@@ -25,7 +25,7 @@
                                   }
                               });
 
-                    bloq.bind([{ user: "User 3" },
+                    bloq.bind([{ user: function () { return (1 + 2); } },
                                { user: "User 4" }])
                               .to("welcome.html")
                               .then(function (html) {

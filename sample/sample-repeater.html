@@ -3,6 +3,7 @@
 <head>
     <title>bloq.js sample</title>
     <script src="../bloq.js"></script>
+  
     <script type="text/javascript">
         /* Preload from the "templates" folder and bind some data */
 
@@ -12,27 +13,33 @@
 
         bloq.ready(function () {
 
+       
+
             var $ = function (id) { return document.getElementById(id); }
 
             bloq("form").put({
                 firstName: "Joe",
-                lastName:"Flacco"
+                lastName: "Flacco",
+                dob: "6/11/1984"
             });
 
             bloq("main")
                 .repeat([
                     {
                         firstName: "Walter", lastName: "Soto",
+                        dob:"3/22/1980",
                         fullName: function () { return this.firstName + " " + this.lastName },
                         type:"Guest"
                     },
                     {
-                        firstName: "Willie", lastName: "Nelson", 
+                        firstName: "Willie", lastName: "Nelson",
+                        dob: "6/11/1940",
                         fullName: function () { return this.firstName + " " + this.lastName },
                         type: "Guest"
                     },
                     {
-                        firstName: "Will", lastName: "Smith", 
+                        firstName: "Will", lastName: "Smith",
+                        dob: "1/2/1970",
                         fullName: function () { return this.firstName + " " + this.lastName },
                         type: "Guest"
                     }
@@ -47,9 +54,9 @@
 
 <div bloq-area="main">
     <div bloq-area="form">
-        <input type="text" name="firstName" bloq-field="firstName" />
+        <input type="text" name="firstName" bloq-field="firstName" bloq-format="#UPPER" />
         <br />
-        <input type="text" name="lastName" bloq-field="lastName"/>
+        <input type="text" name="lastName" bloq-field="lastName" bloq-format="#UPPER" /> 
         <br/>
         <input type="button" onclick="showObject()" value="click" />
     </div>

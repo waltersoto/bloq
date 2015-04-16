@@ -788,6 +788,24 @@ SOFTWARE.
         }
     };
 
+    var formatField = function(txt, format) {
+
+        if (format.length > 0) {
+            if (format.substr(0, 1) === "#") {
+                
+                if (format.indexOf("#UPPER") !== -1) {
+                    return txt.toUpperCase();
+                }
+
+                if (format.indexOf("#LOWER")) {
+                    return txt.toLowerCase();
+                }
+            }
+        }
+
+       return replaceAll("{0}", txt, format);
+    };
+
     var repeat = function (set) {
         return new repeatFn(set);
     };
@@ -887,10 +905,17 @@ SOFTWARE.
                             var element = container.querySelectorAll("[" + ATT.PROPERTY + "=" + p + "]");
 
                             if (typeof element !== UNDEFINED && element.length > 0) {
-
+                               
                                 for (var i = 0, max = element.length; i < max; i++) {
-
+                                    var format = "";
+                                   
                                     var current = (typeof json[p] === FUNCTION) ? json[p]() : json[p];
+
+                                    if (element[i].getAttribute("bloq-format")) {
+                                        format = element[i].getAttribute("bloq-format");
+                                        current = formatField(current, format);
+                                    }
+
                                     switch (element[i].tagName.toLowerCase()) {
                                         case TAG.TEXT_AREA:
                                         case TAG.INPUT:
