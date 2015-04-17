@@ -23,29 +23,22 @@
                 dob: "6/11/1984"
             });
 
-            bloq("main")
-                .repeat([
-                    {
-                        firstName: "Walter", lastName: "Soto",
-                        dob:"3/22/1980",
-                        fullName: function () { return this.firstName + " " + this.lastName },
-                        type:"Guest"
-                    },
-                    {
-                        firstName: "Willie", lastName: "Nelson",
-                        dob: "6/11/1940",
-                        fullName: function () { return this.firstName + " " + this.lastName },
-                        type: "Guest"
-                    },
-                    {
-                        firstName: "Will", lastName: "Smith",
-                        dob: "1/2/1970",
-                        fullName: function () { return this.firstName + " " + this.lastName },
-                        type: "Guest"
-                    }
-                ])
-                .to("users");
+          
 
+            bloq("main").repeat([{ item: "Home", url: "#" },
+                                 { item: "Account", url: "#" },
+                                 { item: "About", url: "#" }])
+                          .to("menu");
+
+            bloq("main").repeat([{ item: "Home", url: "#" },
+                              { item: "Account", url: "#" },
+                              { item: "About", url: "#" }])
+                       .to("menu");
+
+            bloq("main").repeat([{ item: "Home", url: "#" },
+                              { item: "Account", url: "#" },
+                              { item: "About", url: "#" }])
+                       .to("menu");
         });
 
     </script>
@@ -61,11 +54,10 @@
         <input type="button" onclick="showObject()" value="click" />
     </div>
     <br/>
-    <div bloq-repeat="users"> 
-      <div>
-          {fullName} ({type})
-      </div> 
-    </div>
+ 
+    <ul bloq-repeat="menu">
+        <li><a href="{url}">{item}</a></li>
+    </ul>
 </div>
 
 </body>

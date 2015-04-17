@@ -47,6 +47,14 @@ SOFTWARE.
         return text.replace(new RegExp(escapeRegExp(find), "g"), replace);
     }
 
+    var removeChildren = function(element) {
+        if (element.hasChildNodes()) {
+            while (element.childNodes.length >= 1) {
+                element.removeChild(element.firstChild);
+            } 
+        }
+    };
+
     var validListItem = function (o) {
         if (o.hasOwnProperty("template") && o.hasOwnProperty("data")) {
             return (o.data.constructor === Array);
@@ -756,33 +764,56 @@ SOFTWARE.
                     var currentTxt = child.innerHTML;
                     child.innerHTML = replaceAll("{" + p + "}",
                         (typeof obj[p] === FUNCTION) ? obj[p]() : obj[p]
-                        , currentTxt);
-                    parent.appendChild(child);
+                        , currentTxt); 
 
                 }
             }
 
         }
+
+        parent.appendChild(child);
+
+
     };
+
+    var parent = null;
+    var template = null;
+    var original = null;
 
     var repeatFn = function (set) {
 
         this.to = function (name) {
-            var parent = getNode(setName);
+            if (parent === null) {
+                parent = getNode(setName);
+            } 
+           
             if (parent !== null && typeof parent !== UNDEFINED) {
-                var template = select(parent, "[" + ATT.REPEATER + " = " + name + "]");
+                if (template === null) {
+                    var holdTemplate = select(parent, "[" + ATT.REPEATER + " = " + name + "]");
+                    if (holdTemplate.length > 0) {
+                        template = holdTemplate[0];
+                    }
+                }
+                
                 if (template !== null && typeof template !== UNDEFINED) {
-                    for (var i = 0, m = template.length; i < m; i++) {
-                        var original = template[i].cloneNode(true);
-                        parent.removeChild(template[i]);
-                        if (set.constructor === Array) {
-                            for (var s = 0, sm = set.length; s < sm; s++) {
-                                repeateIt(parent, original.cloneNode(true), set[s]);
-                            }
+                    
+                    if (original === null) {
+                        if (template.firstElementChild) {
+                          original = template.firstElementChild.cloneNode(true); 
+                        }   
 
+                    }
+
+                    removeChildren(template);
+
+                    if (set.constructor === Array) {
+                        for (var s = 0, sm = set.length; s < sm; s++) {
+                            repeateIt(template, original.cloneNode(true), set[s]);
                         }
 
                     }
+
+                   
                 }
             }
         }
