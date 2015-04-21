@@ -4,19 +4,14 @@
     <title>bloq.js sample</title>
     <script src="../bloq.js"></script>
   
-    <script type="text/javascript">
-        /* Preload from the "templates" folder and bind some data */
+    <script type="text/javascript"> 
 
         var showObject = function() {
             alert(JSON.stringify(bloq("form").take()));
         };
 
         bloq.ready(function () {
-
-       
-
-            var $ = function (id) { return document.getElementById(id); }
-
+               
             bloq("form").put({
                 firstName: "Joe",
                 lastName: "Flacco",
