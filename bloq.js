@@ -424,7 +424,7 @@ SOFTWARE.
         ///	 Name of the template file
         ///	</param>  
         ///	<param name="callbacks" type="function">
-        ///	 Function that will receive a template instance. (ex. function(html){})
+        ///	 Function that will receive a template Instance. (ex. function(html){})
         ///	</param>
 
         var then = new thenEvents(EVT_LOAD);
