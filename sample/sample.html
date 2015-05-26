@@ -10,10 +10,10 @@
 
             var $ = function (id){ return  document.getElementById(id);}
 
-            //Load from templates with templates "hello.html", "hi.html", "welcome.html"
+            //Load from templates withThis templates "hello.html", "hi.html", "welcome.html"
             // and then execute a callback.
             bloq.loadFrom("./templates/")
-                .with(["hello.html",  "welcome.html"])
+                .withThis(["hello.html",  "welcome.html"])
                 .then(function () {
 
                     bloq.bind([{ user: "User 1" },

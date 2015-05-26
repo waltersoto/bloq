@@ -1,0 +1,7 @@
+﻿{
+  "package": "bloq",
+  "version": "1.0.0.0",
+  "source": "./",
+  "release": "./",
+  "actions": [ { "type": "minify", "filename": "{filename}.min.{extension}", "ignore": [ "*.min.*" ] } ]
+}

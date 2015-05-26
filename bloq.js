@@ -22,29 +22,26 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 (function (global) {
+    "use strict";
 
     var FUNCTION = "function";
     var UNDEFINED = "undefined";
     var EVT_BIND_TO = "bind-to";
     var EVT_BIND_ALTERNATE = "bind-alternate";
-    var EVT_LOAD_WITH = "load-with";
+    var EVT_LOAD_WITH = "load-withThis";
     var EVT_LOAD = "load";
     var EVT_LIST = "load-list";
     var XML_ROOT = "templates";
     var XML_CHILD = "template";
-
-    var escapeRegExp = function (string) {
-        return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
-    }
-
+     
     var trim = function (str) {
         return str.replace(/^\s+|\s+$/g, "");
     }
     var autoBlank = function (txt) {
         return (typeof txt === "undefined" || txt === null) ? "" : txt;
     }
-    var replaceAll = function (find, replace, text) { 
-        return text.replace(new RegExp(escapeRegExp(find), "g"), replace);
+    var replaceAll = function (find, replace, text) {
+        return text.split(find).join(replace); 
     }
 
     var removeChildren = function(element) {
@@ -143,17 +140,7 @@ SOFTWARE.
     };
 
 
-    var where = function (arr, fn) {
-        var sub = [];
-        (function (a) {
-            for (var i = 0, max = a.length; i < max; i++) {
-                if (fn(arr[i], i)) {
-                    sub.push(arr[i]);
-                }
-            }
-        })(arr);
-        return sub;
-    };
+
 
     var getTemplates = function (lst) {
         var result = [];
@@ -182,12 +169,24 @@ SOFTWARE.
     var usingInline = false;
     var templateList = [];
 
-    var hasTemplate = function (template) {
+    var where = function (arr, fnCall) {
+        var sub = [];
+        (function (a) {
+            for (var i = 0, max = a.length; i < max; i++) {
+                if (fnCall(arr[i], i)) {
+                    sub.push(arr[i]);
+                }
+            }
+        })(arr);
+        return sub;
+    };
+
+    var hasTemplate = function (tpl) {
 
         var sel = where(templateList, function (o) {
 
-            return o.name === (validTemplate(template)
-                              ? template.name : template);
+            return o.name === (validTemplate(tpl)
+                              ? tpl.name : tpl);
         });
 
         return sel.length > 0;
@@ -286,7 +285,7 @@ SOFTWARE.
     var loadEvents = function () {
 
 
-        this.with = function (lst) {
+        this.withThis = function (lst) {
             /// <signature>
             ///   <summary>Template list</summary>
             ///   <param name="lst" type="array">Array of template names (ex. ["template1","teamplate2"])</param> 
@@ -319,10 +318,10 @@ SOFTWARE.
                 } else {
                     
                     for (var inl = 0, inlMax = lst.length; inl < inlMax; inl++) {
-                            for (ri = 0, rm = repository.length; ri < rm; ri++) {
-                                if (validTemplate(repository[ri])) {
-                                    if (repository[ri].name === lst[inl]) {
-                                        templateList.push(repository[ri]);
+                        for (var ai = 0, am = repository.length; ai < am; ai++) {
+                            if (validTemplate(repository[ai])) {
+                                if (repository[ai].name === lst[inl]) {
+                                    templateList.push(repository[ai]);
                                         break;
                                     }
 
@@ -418,7 +417,7 @@ SOFTWARE.
 
     var load = function (name, asText) {
         ///	<summary>
-        ///	Load template as text with data biding
+        ///	Load template as text withThis data biding
         ///	</summary>
         ///	<param name="name" type="string">
         ///	 Name of the template file
@@ -458,7 +457,7 @@ SOFTWARE.
 
     var loadFrom = function (repo) {
         ///	<summary>
-        ///	Set repositiory location and allow the with() method to preload the templates.
+        ///	Set repositiory location and allow the withThis() method to preload the templates.
         ///	</summary>
         ///	<param name="repo" type="string">
         ///	 Repository location
@@ -492,7 +491,7 @@ SOFTWARE.
                 }
 
                 loadFrom(repository)
-                    .with(reqTemplates)
+                    .withThis(reqTemplates)
                     .then(function () {
 
                         var templateN = templates.length;
@@ -624,7 +623,7 @@ SOFTWARE.
             }
 
             loadFrom(repository)
-                .with(reqTemplates)
+                .withThis(reqTemplates)
                 .then(function () {
 
                     for (var i = 0, max = bindList.length; i < max; i++) {
@@ -971,9 +970,9 @@ SOFTWARE.
                                                 }
                                             } else {
                                                 for (var ji = 0, jm = json[p].length; ji < jm; ji++) {
-                                                    for (oi = 0, m = element[i].length; oi < m; oi++) {
-                                                        if (element[i].options[oi].value.toLowerCase() === current.toLowerCase()) {
-                                                            element[i].options[oi].selected = true;
+                                                    for (var ai = 0, am = element[i].length; ai < am; ai++) {
+                                                        if (element[i].options[ai].value.toLowerCase() === current.toLowerCase()) {
+                                                            element[i].options[ai].selected = true;
                                                         }
                                                     }
                                                 }
