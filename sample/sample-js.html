@@ -14,7 +14,7 @@
             //Load all templates from a javascript array from greetings.js
             // and then execute a callback.
             bloq.loadFrom(greetings)
-                .with("*")
+                .withThis("*")
                 .then(function() {
 
                     //Bind data to template "hello"

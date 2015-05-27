@@ -10,10 +10,10 @@
 
             var $ = function (id){ return  document.getElementById(id);}
 
-            //Load from "./templates/" with templates from "greetings.xml"
+            //Load from "./templates/" withThis templates from "greetings.xml"
             // and then execute a callback.
             bloq.loadFrom("./templates/")
-                .with("greetings.xml")
+                .withThis("greetings.xml")
                 .then(function () {
 
                     //Bind data to template "hello"
