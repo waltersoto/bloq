@@ -540,14 +540,14 @@ SOFTWARE.
             return new thenEvents(EVT_BIND_ALTERNATE, items);
         };
 
-        this.to = function (template) {
+        this.to = function (templateName) {
 
-            var items = [];
+            var items = []; 
 
-            if (template.constructor === Array) {
+            if (templateName.constructor === Array) {
 
-                for (var t = 0, tmax = template.length; t < tmax; t++) {
-                    load(template[t], true).then(function (html) {
+                for (var t = 0, tmax = templateName.length; t < tmax; t++) {
+                    load(templateName[t], true).then(function (html) {
 
                         if (bindings !== null
                                     && typeof bindings !== "undefined") {
@@ -574,7 +574,7 @@ SOFTWARE.
 
             } else {
 
-                load(template, true).then(function (html) {
+                load(templateName, true).then(function (html) {
 
                     if (bindings !== null
                                 && typeof bindings !== "undefined") {
@@ -670,7 +670,7 @@ SOFTWARE.
         },
         list: list,
         loadFrom: loadFrom,
-        read: function (template, parameters) {
+        read: function (templateName, parameters) {
             if (typeof parameters === "undefined" || parameters === null) {
                 parameters = {};
             }
@@ -691,7 +691,7 @@ SOFTWARE.
                 asText = parameters.asText;
             }
 
-            return load(template, asText);
+            return load(templateName, asText);
         },
         bind: bind
     };
@@ -715,9 +715,9 @@ SOFTWARE.
 
     var setName = "";
 
-    var select = function (parent, query) {
-        if (parent !== null && typeof parent !== UNDEFINED) {
-            return parent.querySelectorAll(query);
+    var select = function (parentElement, query) {
+        if (parentElement !== null && typeof parentElement !== UNDEFINED) {
+            return parentElement.querySelectorAll(query);
         }
         return null;
     };
@@ -744,16 +744,16 @@ SOFTWARE.
         return null;
     };
 
-    var getNodeProperties = function () {
+    var getNodeProperties = function (mappingType) {
 
         var container = getNode(setName);
 
-        var nodeList = select(container, "[" + ATT.PROPERTY + "]");
+        var nodeList = select(container, "[" + mappingType + "]");
 
         return nodeList;
     };
 
-    var repeateIt = function (parent, child, obj) {
+    var repeateIt = function (parentElement, child, obj) {
         for (var p in obj) {
 
             if (obj.hasOwnProperty(p)) {
@@ -770,7 +770,7 @@ SOFTWARE.
 
         }
 
-        parent.appendChild(child);
+        parentElement.appendChild(child);
 
 
     };
@@ -845,16 +845,18 @@ SOFTWARE.
         setName = name;
 
         this.repeat = repeat;
-
-        this.take = function () {
+         
+        var takeFn = function (mappingType) {
 
             var set = {
             };
 
-            var nodes = getNodeProperties(setName);
+            var nodes = getNodeProperties(mappingType);
             if (typeof nodes !== "undefined" && nodes !== null && nodes.length > 0) {
                 for (var i = 0; i < nodes.length; i++) {
-                    var propName = nodes[i].attributes.getNamedItem(ATT.PROPERTY).value;
+                  
+
+                    var propName = nodes[i].attributes.getNamedItem(mappingType).value;
 
                     switch (nodes[i].tagName.toLowerCase()) {
                         case TAG.TEXT_AREA:
@@ -900,10 +902,19 @@ SOFTWARE.
             return set;
         };
 
+        this.takeTemplate = function () {
+            return takeFn(ATT.TEMPLATE);
+        };
+
+        this.take = function() {
+            return takeFn(ATT.PROPERTY);
+        };
+
+       
         this.put = function (json) {
 
             var container = getNode(setName);
-
+           
             if (container !== null) {
 
                 //Process templates
