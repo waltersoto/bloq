@@ -910,10 +910,20 @@ SOFTWARE.
             return takeFn(ATT.PROPERTY);
         };
 
-       
+        var originalContainer = null;
+
         this.put = function (json) {
 
             var container = getNode(setName);
+
+            if (originalContainer === null) {
+                originalContainer = container.cloneNode(true);
+            } else {
+                var parentContainer = container.parentNode;
+                parentContainer.removeChild(container);
+                container = originalContainer.cloneNode(true);
+                parentContainer.appendChild(container);
+            }
            
             if (container !== null) {
 
