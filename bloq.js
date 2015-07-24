@@ -839,7 +839,7 @@ SOFTWARE.
     var repeat = function (set) {
         return new repeatFn(set);
     };
-
+    var originalContainer = null;
     var fn = function (name) {
 
         setName = name;
@@ -909,9 +909,7 @@ SOFTWARE.
         this.take = function() {
             return takeFn(ATT.PROPERTY);
         };
-
-        var originalContainer = null;
-
+         
         this.put = function (json) {
 
             var container = getNode(setName);
